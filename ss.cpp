@@ -101,7 +101,19 @@ int startListening(int serverPort){
 	}
 	
 	//Need to print out the IP and port for this server here
-	
+	/*string SADDRESS;
+	char buff[80];
+   	gethostname(buff, sizeof(buff));
+    	struct hostent *IP = gethostbyname(buff);
+    	for (int i = 0; IP->h_addr_list[i] != 0; ++i) {
+      		struct in_addr addr;
+      		memcpy(&addr, IP->h_addr_list[i], sizeof(struct in_addr));
+		SADDRESS = inet_ntoa(addr);
+    	}
+	socklen_t length = sizeof(server_sin);
+   	getsockname(curr,(struct sockaddr*)&server_sin,&length);
+	cout << "Waiting for a connection on " << SADDRESS << " port " << ntohs(server_sin.sin_port) << endl; */	
+
 	return listen(sock_fd, BACKLOG);//BACKLOG is defined as 10.
 	
 

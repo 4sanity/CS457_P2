@@ -10,8 +10,8 @@
 
 using namespace std;
 
-char * filename = "chaingang.txt";//Default filename as specified by write-up
-char * URL = "www.google.com/index.html";//Default URL as specified by write-up
+char filename[] = "chaingang.txt";//Default filename as specified by write-up
+char URL[] = "";//Default URL as specified by write-up, URL is required and only filename is optional
 
 int main(int argc, char* argv[]){
 
@@ -54,19 +54,22 @@ int main(int argc, char* argv[]){
 
 
 int parseArgs(int argc, char* argv[], char * URL, char* filename){
+	//in this assignment these are the only way these arguments are given
 	
-	//I'm probably going to come back and add a lot more thorough error checking which is why I decided to make this a function rather than doing it all in main.
-	//Its bad form to assume optional arguments will appear in the given order.
-	
-	if (argc == 2 || argc == 4){
+	if(argc==2){
+		//only argument given is URL, filename default is already set
 		URL = argv[1];
-		if(argc == 4){
-			filename = argv[3];
-			return 1;//True
-		}
-		return 1;
+		return true;
+	}else if(argc==4){
+		//option -c is given with filename
+		URL = argv[1];
+		string option = argv[2];
+		if(!(option=="-c")){ return false; }
+		filename = argv[3];
+		return true;
+	}else{ 
+		return false;
 	}
-	else return 0;//False
 	
 }
 //End parseArgs
