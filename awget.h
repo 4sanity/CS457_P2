@@ -47,7 +47,7 @@ struct packet{
  *  RETURNS
  *		int - returns 1 if all args are correct and 0 in the event of an error. All error messages are printed in readFile function.
  */
-int parseArgs(int argc, char* argv[], char * URL, char* filename);
+int parseArgs(int argc, char* argv[]);
 
 
 /* This function chooses opens the file specified in filename in the command line arguments reads the entries and chooses a random <IP,Port> pair to be used in the first hop of the anonymous get.

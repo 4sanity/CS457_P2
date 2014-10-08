@@ -6,18 +6,16 @@
 
 #include "awget.h"
 
-#define DEFAULTFILE "chaingang.txt"
-
 using namespace std;
 
+char URL[] = "www.google.com/index.html";//Default URL as specified by write-up
 char filename[] = "chaingang.txt";//Default filename as specified by write-up
-char URL[] = "";//Default URL as specified by write-up, URL is required and only filename is optional
 
 int main(int argc, char* argv[]){
 
 	pair<string,string> dest;
 
-	if(!parseArgs(argc, argv, filename, URL)){
+	if(!parseArgs(argc, argv)){
 		cerr << "Usage: URL to get or filename of stepping stones to use was not specified.\n awget www.google.com -c stones.txt " << endl;
 		exit(EXIT_FAILURE);
 	}//End if
@@ -53,24 +51,30 @@ int main(int argc, char* argv[]){
 }//End Main
 
 
-int parseArgs(int argc, char* argv[], char * URL, char* filename){
-	//in this assignment these are the only way these arguments are given
-	
-	if(argc==2){
+int parseArgs(int argc, char* argv[]){
+	if(argc==1){
+		//no arguments, defaults are set
+		return true;
+	}else if(argc==2){
 		//only argument given is URL, filename default is already set
-		URL = argv[1];
+		strcpy(URL,argv[1]);
+		return true;
+	}else if(argc==3){
+		//option -c is given with filename and no URL
+		string option = argv[1];
+		if(!(option=="-c")){ return false; }
+		strcpy(filename,argv[2]);
 		return true;
 	}else if(argc==4){
 		//option -c is given with filename
-		URL = argv[1];
+		strcpy(URL,argv[1]);
 		string option = argv[2];
 		if(!(option=="-c")){ return false; }
-		filename = argv[3];
+		strcpy(filename,argv[3]);
 		return true;
 	}else{ 
 		return false;
-	}
-	
+	}	
 }
 //End parseArgs
 
