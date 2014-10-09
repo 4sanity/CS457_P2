@@ -18,7 +18,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <arpa/inet.h>
-
+#include <fcntl.h>
 
 #define BACKLOG 10
 
@@ -63,26 +63,51 @@ int main(int argc, char* argv[]){
 		exit(EXIT_FAILURE);
 	}
 	
-	cout << "Found a friend" << endl;
-	
 	while(true){
+		char URL[1000];
+		recv(client_sockfd,URL,sizeof(URL),0);
+		cout << "Request: " << URL << endl;
+		
+		char filename[1000];  //probably wont use filename
+		recv(client_sockfd,filename,sizeof(filename),0);
+		
+		//dont touch this part because i dont even know how it works
+		int bytesRead = 1;
+		int bytesSent;
 		char buff[1000];
-		recv(client_sockfd,buff,sizeof(buff),0);
-		cout << buff << endl;
+		int chains = open("chainfile.txt",O_CREAT | O_WRONLY,S_IRUSR | S_IWUSR);
+		if(chains == -1){
+			cout << "Error: Could not open file." << endl;
+		}
+		while(bytesRead > 0){      
+			bytesRead = recv(client_sockfd, buff, 1000, 0);
+			if(bytesRead == 0){
+				break;
+			}
+			bytesSent = write(chains, buff, bytesRead);
+			if(bytesSent < 0){
+				cout << "Error: Message failed to send." << endl;
+			}
+		}
+		
+		//this probably doesnt need to be here, when this is threaded and awget is called it will print this out
+		cout << "chainlist is " << endl;
+		ifstream readIn("chainfile.txt", ifstream::in);
+		int cnt;
+		readIn >> cnt;
+		string newline;
+		getline(readIn,newline);
+		string line;
+		for (int i = 0; i<cnt; i++){
+			getline(readIn,line);
+			cout << "<" << line << ">" << endl;
+		}
+		//cout << "next SS is <" << dest.first << "," << dest.second << ">" << endl;
+		cout << "waiting for file..." << endl;
+
+		//this is where you thread and check if cnt is 0, it is popped in awget
+		
 		exit(1);
-		/*recv(client_sockfd,(void*)&packet,sizeof(Packet),0);
-		ifstream infile("thefile.txt");
-		if(!readIn){
-			cerr << "The file could not be found." << endl;
-			exit(EXIT_FAILURE);
-		}
-		while(!readIn.eof()){
-			getline(readIn,text);
-			cout << "" << text << "\n" ;
-		}
-	}
-	
-	readIn >> cnt; */
 	}
 	
 }//End Main

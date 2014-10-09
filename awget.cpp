@@ -36,14 +36,41 @@ int main(int argc, char* argv[]){
 		cout << "Error: Failed to connect with server." << endl;
 		exit(1);
 	}
-	cout << "Connection successful... Sending files and waiting for return." << endl;
-	//strip from chaingang here
+	
+	//enumeration of request and chainlist
+	cout << "Request: " << URL << endl;
+	cout << "chainlist is " << endl;
+	ifstream readIn(filename, ifstream::in);
+	int cnt;
+	readIn >> cnt;
+	string newline;
+	getline(readIn,newline);
+	string line;
+	for (int i = 0; i<cnt; i++){
+		getline(readIn,line);
+		cout << "<" << line << ">" << endl;
+	}
+	cout << "next SS is <" << dest.first << "," << dest.second << ">" << endl;
+	cout << "waiting for file..." << endl;
 	
 	while(true){
 		char buff[1000];
 		strcpy(buff,URL);
 		send(clientSocket,buff,strlen(URL),0);
-		recv(clientSocket,buff,strlen(buff),0);
+		
+		strcpy(buff,filename);
+		send(clientSocket,buff,strlen(filename),0);
+		
+		FILE* chains = fopen(filename, "r");
+		int fileBlockSz;
+		while((fileBlockSz = fread(buff, sizeof(char), 1000, chains)) > 0){
+			send(clientSocket, buff, fileBlockSz, 0);
+        }
+    
+		
+		
+		//be aware when i added this recv it would not write to chainlist in ss
+		//recv(clientSocket,buff,strlen(buff),0);
 		exit(1);
 		//printf("Friend: %s\n",packet.message);
 	}
