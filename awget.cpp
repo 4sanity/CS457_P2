@@ -18,35 +18,35 @@ int main(int argc, char* argv[]){
 	if(!parseArgs(argc, argv)){
 		cerr << "Usage: URL to get or filename of stepping stones to use was not specified.\n awget www.google.com -c stones.txt " << endl;
 		exit(EXIT_FAILURE);
-	}
-	
+
+	}//End of
+		
 	dest = selectRandomStep();
 	
-	//This whole If block is probably unnecessary but it catches the case where the chaingang.txt file has no entries...in no way is this anonymous but you still get the file...booyah!
-	/*if(strncmp(get<0>(dest).c_str(), "127.0.0.1", get<0>(dest).length()-1) == 0 && strncmp(get<1>(dest).c_str(), "0", 1) == 0){
-		cout << "No stepping stones were provided in the file " << filename << " fetching the content at " << URL << "." << endl;
-		//system(wget(URL));
-		exit(EXIT_SUCCESS);
-	} */
-	if(dest==NULL){
-		cout << "No stepping stones were provided in the file " << filename << " fetching the content at " << URL << "." << endl;
+	int clientSocket;
+	struct sockaddr_in serverAddress;
+	if((clientSocket=socket(PF_INET,SOCK_STREAM,0))<0){
+		cout << "Error: Client socket could not be created." << endl;
+		exit(1);
+	}	
+	serverAddress.sin_family = AF_INET;
+	serverAddress.sin_addr.s_addr = htonl(inet_network(get<0>(dest).c_str()));  //inet_addr(SADDRESS)
+	serverAddress.sin_port = htons(atoi(get<1>(dest).c_str()));
+	if((connect(clientSocket,(struct sockaddr *)&serverAddress,sizeof(sockaddr_in))< 0)){
+		cout << "Error: Failed to connect with server." << endl;
+		exit(1);
 	}
+	cout << "Connection successful... Sending files and waiting for return." << endl;
+	//strip from chaingang here
 	
-	int socket_fd = setupConnection(dest);
-	if(socket_fd == -1){
-		cerr << "A server could not be contacted. This most likely means the FBI have seized those systems and are tracking your IP at this very instant. Fly, you fool!" << endl;
-		exit(EXIT_FAILURE);
+	while(true){
+		char buff[1000];
+		strcpy(buff,URL);
+		send(clientSocket,buff,strlen(URL),0);
+		recv(clientSocket,buff,strlen(buff),0);
+		exit(1);
+		//printf("Friend: %s\n",packet.message);
 	}
-	
-	/*After setupConnection has completed we have the socket descriptor associated with a specific port and are ready to communicate with the first server.
-	 * There are 2 big questions we need to answer before implementing all of this though.
-	 *      1.) How are we sending the list of stepping stones across the connection? 
-	 *		A: So far it looks like a stringstream is the best way of transmitting a file. I used the SO topic http://stackoverflow.com/questions/7122254/bad-file-descriptor-with-bsd-socket
-	 *			Essentially what this means is we will send each line of the file one packet at a time and reconstruct it into a new file on the server side.
-	 *			We don't even have to keep a local copy this way. All that would occur is a stepping stones file would exist in memory and be lost when the program exits.
-	 *	2.) Are we going to branch new connections for multiple requests or use the select command?
-	 *		A: With the SO topic referenced above it looks like select is nice and simple.
-	*/
 	
 }//End Main
 
@@ -90,35 +90,22 @@ pair<string,string> selectRandomStep(){
 		exit(EXIT_FAILURE);
 	}
 	
-	readIn >> cnt; //if cnt==0, return null, catch
-	randomIndex = rand()%cnt;
+	readIn >> cnt;
+	string newline;
+	getline(readIn,newline);
+	randomIndex = rand()%cnt+1; //random index between 1 and cnt
 	string tmpStr;
 	
-	for (int i = 0; getline(readIn,tmpStr); ++i){
+	for (int i = 1; i<=cnt; i++){
+		getline(readIn,tmpStr);
 		if(i == randomIndex){
 			int cmPos = tmpStr.find(",");//Gets position of the comma which delimits IP Address and Port #
 			int spPos = tmpStr.find(" ");//Gets position of the space between IP Address and Port #
-			destinationHost = make_pair(tmpStr.substr(0, cmPos), tmpStr.substr(spPos+1, (tmpStr.length()-1) -spPos));//Creates the <IP,Port> pair for the destination host
-			cout << tmpStr.substr(0, cmPos) << endl;
-			cout << tmpStr.substr(spPos+1, (tmpStr.length()-1) -spPos) << endl;
+			destinationHost.first = tmpStr.substr(0, cmPos);
+			destinationHost.second = tmpStr.substr(spPos+1,(tmpStr.length()-1)-spPos);
 		}//End if
 	}//End for
 	
 	return destinationHost;//return <IP,Port> Pair
 }
 //End readFile
-
-/* setupConnection simply wraps up the ugliness of getting the hosts IP, creating a socket and binding it to a port.
- * 
- *	PARAMETERS
- *		conn - Contains the <IP,Port> pair for the server this client will connect to and forward the initial wget() command onto.
- *
- *	RETURN
- *		int - Returns the socket file descriptor for the TCP connection b/w this host and the server. The socket file descriptor can then be used in send, write, read etc.
- */
-int setupConnection(pair<string,string> conn){
-	int socket_fd = -1;
-	//Establish a tcp connection here kthxbai.
-	return socket_fd;
-}
-//End setupConnection

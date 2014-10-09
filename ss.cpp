@@ -25,17 +25,23 @@
 using namespace std;
 
 //////////////////////////////////////////////////////////////////////////////FUNCTION PROTOTYPES//////////////////////////////////////////////////////////////////////////////////////////////////////
-int startListening(int servPort);
+int startListening(int port);
 int tearDown(int servSock_fd);
 /////////////////////////////////////////////////////////////////////////////END FUNCTION PROTOTYPES///////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 int main(int argc, char* argv[]){
-
-	int servPort; //Port Number this host will listen on.
-	int serv_sockfd;//socket file descriptor that will be used for TCP connection
+	int port;
+	int serv_sockfd, client_sockfd;//socket file descriptors that will be used for TCP connection
+	socklen_t clientAddrLen = sizeof(struct sockaddr_storage);
+	struct sockaddr_storage client;
+	memset(&client, 0, sizeof(struct sockaddr_storage));
 	
-	if(argc == 2){
+	//port argument is optional
+	if(argc==1){
+		port=0;
+	}
+	else if(argc == 2){
 		for(int i = 0; i < strlen(argv[1]); ++i){
 			if (!isdigit(argv[1][i])){
 				cerr << "USAGE: An integer value must be provided for <port#>." << endl;
@@ -43,79 +49,84 @@ int main(int argc, char* argv[]){
 				break;
 			}
 		}
-		servPort = atoi(argv[1]);
+		port = atoi(argv[1]);
 	}
 	else{
 		cerr << "USAGE: The correct # of arguments was not provided." << endl;
 		cerr << "./ss <Port#>" << endl;
 	}
 	
-	startListening(servPort);
-	//Print our IP and Port number being listened on here.
+	serv_sockfd = startListening(port);
+	
+	if((client_sockfd = accept(serv_sockfd, (struct sockaddr*)&client, &clientAddrLen)),0){
+		cerr << "Connection could not be established" << endl;
+		exit(EXIT_FAILURE);
+	}
+	
+	cout << "Found a friend" << endl;
+	
+	while(true){
+		char buff[1000];
+		recv(client_sockfd,buff,sizeof(buff),0);
+		cout << buff << endl;
+		exit(1);
+		/*recv(client_sockfd,(void*)&packet,sizeof(Packet),0);
+		ifstream infile("thefile.txt");
+		if(!readIn){
+			cerr << "The file could not be found." << endl;
+			exit(EXIT_FAILURE);
+		}
+		while(!readIn.eof()){
+			getline(readIn,text);
+			cout << "" << text << "\n" ;
+		}
+	}
+	
+	readIn >> cnt; */
+	}
 	
 }//End Main
 
-/*
- * Essentially this is the server code from the chat program written earlier.
- * The function stops after the initial listen call is made, therefore the accept() call needs to be made in main.
- *
- *	PARAMETERS
- *		servPort - The port this server will listen on.
- *
- *	RETURN
- *		int - The socket file descriptor for this server.
- */
-int startListening(int serverPort){
 
-	int sock_fd;
-	struct addrinfo hints, *retVal, *curr;//Used for getaddrinfo()
-	struct sockaddr_in server_sin, client_sin;
-	struct sockaddr_storage client_addr;
+int startListening(int serverPort){
+	
+	int serverSocket;
+	struct sockaddr_in serverAddress;
+	
+	if((serverSocket=socket(PF_INET,SOCK_STREAM,0))<0){
+		cout << "Error: Server socket could not be created." << endl;
+		exit(1);
+	}
 		
-	//Initialize and set values for hints
-	memset(&hints, 0, sizeof(struct addrinfo))	;
-	hints.ai_flags = AI_PASSIVE;
-	hints.ai_family = AF_INET;
-	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_protocol = 0;//Signals any protocol
-	
-	if(getaddrinfo("www.colostate.edu", NULL, &hints, &retVal) != 0){
-		cerr << "getaddrinfo() Failed" << endl;
-		exit(EXIT_FAILURE);
+	serverAddress.sin_family = AF_INET;
+	serverAddress.sin_addr.s_addr = htonl(INADDR_ANY); //LOOPBACK binds to localhost
+	serverAddress.sin_port = htons(serverPort);
+		
+	if(bind(serverSocket,(struct sockaddr*)&serverAddress,sizeof(serverAddress))<0){
+		cout << "Error: Server failed to bind." << endl;
+		exit(1);
 	}
-	
-	for(curr = retVal; curr != NULL; curr = curr->ai_next)	{
-		sock_fd = socket(curr->ai_family, curr->ai_socktype, curr->ai_protocol);
-		if(sock_fd == -1){
-			continue;
-		}
-		if(bind(sock_fd, curr->ai_addr, curr->ai_addrlen)){
-			break;
-		}
-		close(sock_fd);
+		
+	if(listen(serverSocket, BACKLOG)<0){
+		cout << "Error: Server failed to start listen." << endl;
+		exit(1);
 	}
-	
-	if(curr == NULL){
-		cerr << "Socket could not bind a socket" << endl;
-		exit(EXIT_FAILURE);
-	}
-	
-	//Need to print out the IP and port for this server here
-	/*string SADDRESS;
+		
+	//gethostname then store IP and port server is on then print
+	string SADDRESS;
 	char buff[80];
    	gethostname(buff, sizeof(buff));
-    	struct hostent *IP = gethostbyname(buff);
-    	for (int i = 0; IP->h_addr_list[i] != 0; ++i) {
-      		struct in_addr addr;
-      		memcpy(&addr, IP->h_addr_list[i], sizeof(struct in_addr));
+    struct hostent *IP = gethostbyname(buff);
+    for (int i = 0; IP->h_addr_list[i] != 0; ++i) {
+      	struct in_addr addr;
+      	memcpy(&addr, IP->h_addr_list[i], sizeof(struct in_addr));
 		SADDRESS = inet_ntoa(addr);
-    	}
-	socklen_t length = sizeof(server_sin);
-   	getsockname(curr,(struct sockaddr*)&server_sin,&length);
-	cout << "Waiting for a connection on " << SADDRESS << " port " << ntohs(server_sin.sin_port) << endl; */	
-
-	return listen(sock_fd, BACKLOG);//BACKLOG is defined as 10.
+    }
+	socklen_t length = sizeof(serverAddress);
+   	getsockname(serverSocket,(struct sockaddr*)&serverAddress,&length);
+	cout << "Waiting for a connection on " << SADDRESS << " port " << ntohs(serverAddress.sin_port) << endl;
 	
+	return serverSocket;
 
 }
 //End startListening
@@ -132,28 +143,3 @@ int startListening(int serverPort){
 int tearDown(int servSock_fd){
 }
 //End tearDownConnection
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
