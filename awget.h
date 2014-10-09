@@ -62,7 +62,7 @@ int parseArgs(int argc, char* argv[]);
  *		std::pair<int,int> - the specific IP and port of the next host to connect to.
  *		NULL - The functions returns NULL in the event no <IP Port> pairs were provided in the file given as a parameter.
  */
-std::pair<std::string,std::string> selectRandomStep(char * filename);
+std::pair<std::string,std::string> selectRandomStep();
 
 /* This wraps up all of the ugliness of setting up a TCP connection in a function and returns the socket file descriptor.
  * The IP and Port number for this host is determined inside this function.
